@@ -7,52 +7,58 @@ import os
 
 
 
-'''
-VERY IMPORTANT HELPER FUNCTION WHICH ALLOWS YOU TO PLAY SOUND FOR PACMAN GAME BY READING THE SOUND FILES FROM THE SAME DIRECTORY AS THE GAME
-'''
-def open_file_in_same_directory(file_name):
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    file_path = os.path.join(script_dir, file_name)
-
-    return file_path
-
-
-
-
-
-#scale between the sprite sheet and the actual display
-SCALE = 3
-# Screen dimensions
-#number of cells in the x and y direction (8x8 pixels in the original image consituttes a cell)
-X_CELLS = 28
-Y_CELLS = 31
-
-
-SCREEN_WIDTH = X_CELLS*8*SCALE
-SCREEN_HEIGHT = Y_CELLS*8*SCALE+120
-
-#cordinattes to the middle ghost cage as this is where all the ghosts start at in terms of cells
-BLINKY_CAGE_CORDS = (13,11)
-CAGE_CORDS = (13,13)
-
-#pacman starting position
-PACMAN_START = (13, 23)
-
-DISPLAYING = False
-
 # Initialize pygame
 pyg.init()
 
-# Load the sprite sheet
-sprite_sheet_path = open_file_in_same_directory('Arcade - Pac-Man - General Sprites.png')
-#arcade font path
-arcade_font_path = open_file_in_same_directory('PressStart2P-vaV7.ttf')
+'''
+VERY IMPORTANT HELPER FUNCTION WHICH ALLOWS YOU TO PLAY SOUND FOR PACMAN GAME BY READING THE SOUND FILES FROM THE SAME DIRECTORY AS THE GAME
+'''
 
-ARCADE_FONT = pyg.font.Font(arcade_font_path, 20)
-ARCADE_FONT_LARGE = pyg.font.Font(arcade_font_path, 32)
 
-# Create the screen
-screen = pyg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+
+
+#contain basic game setup information and graphics
+class Game_Setup:
+    def __init__(self):
+        # Set up the display
+        #scale between the sprite sheet and the actual display
+        self.SCALE = 3
+        # Screen dimensions
+        #number of cells in the x and y direction (8x8 pixels in the original image consituttes a cell)
+        self.X_CELLS = 28
+        self.Y_CELLS = 31
+
+
+        self.SCREEN_WIDTH = self.X_CELLS*8*self.SCALE
+        self.SCREEN_HEIGHT = self.Y_CELLS*8*self.SCALE+120
+
+        #cordinattes to the middle ghost cage as this is where all the ghosts start at in terms of cells
+        self.BLINKY_CAGE_CORDS = (13,11)
+        self.CAGE_CORDS = (13,13)
+
+        #pacman starting position
+        self.PACMAN_START = (13, 23)
+
+        self.DISPLAYING = False
+
+
+        # Load the sprite sheet
+        self.SPRITE_SHEET_PATH = self.open_file_in_same_directory('Arcade - Pac-Man - General Sprites.png')
+        #arcade font path
+        self.ARCADE_FONT_PATH = self.open_file_in_same_directory('PressStart2P-vaV7.ttf')
+
+        self.ARCADE_FONT = pyg.font.Font(self.ARCADE_FONT_PATH, 20)
+        self.ARCADE_FONT_LARGE = pyg.font.Font(self.ARCADE_FONT_PATH, 32)
+
+        # Create the screen
+        self.SCREEN = pyg.display.set_mode((self.SCREEN_WIDTH, self.SCREEN_HEIGHT))
+
+    @staticmethod
+    def open_file_in_same_directory(file_name):
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        file_path = os.path.join(script_dir, file_name)
+
+        return file_path
 
 
 '''
@@ -99,6 +105,7 @@ class Stopwatch:
     
 
 class SoundEffects:
+    
     eating_channel = pyg.mixer.Channel(0)
     background_channel = pyg.mixer.Channel(1)
     startup_channel = pyg.mixer.Channel(2)
@@ -108,20 +115,22 @@ class SoundEffects:
     
     
 
-    eating_effect = pyg.mixer.Sound(open_file_in_same_directory("pacman_waka.wav"))
-    background_effect = pyg.mixer.Sound(open_file_in_same_directory("pacman_background.wav"))
-    startup_effect = pyg.mixer.Sound(open_file_in_same_directory("pacman_startup.wav"))
-    death_effect = pyg.mixer.Sound(open_file_in_same_directory("pacman_death.wav"))
-    cherry_effect = pyg.mixer.Sound(open_file_in_same_directory("pacman_eatfruit.wav"))
-    frightened_effect = pyg.mixer.Sound(open_file_in_same_directory("pacman_backgroundfrightened.wav"))
-    ghost_eating_effect = pyg.mixer.Sound(open_file_in_same_directory("pacman_eatghost.wav"))
-    win_effect = pyg.mixer.Sound(open_file_in_same_directory("pacman_win.wav"))
+    eating_effect = pyg.mixer.Sound(Game_Setup.open_file_in_same_directory("pacman_waka.wav"))
+    background_effect = pyg.mixer.Sound(Game_Setup.open_file_in_same_directory("pacman_background.wav"))
+    startup_effect = pyg.mixer.Sound(Game_Setup.open_file_in_same_directory("pacman_startup.wav"))
+    death_effect = pyg.mixer.Sound(Game_Setup.open_file_in_same_directory("pacman_death.wav"))
+    cherry_effect = pyg.mixer.Sound(Game_Setup.open_file_in_same_directory("pacman_eatfruit.wav"))
+    frightened_effect = pyg.mixer.Sound(Game_Setup.open_file_in_same_directory("pacman_backgroundfrightened.wav"))
+    ghost_eating_effect = pyg.mixer.Sound(Game_Setup.open_file_in_same_directory("pacman_eatghost.wav"))
+    win_effect = pyg.mixer.Sound(Game_Setup.open_file_in_same_directory("pacman_win.wav"))
 
 
 
 
 class Graphics:
-    def __init__(self, sprite_sheet_path):
+    def __init__(self, setup):
+        self.setup = setup
+        sprite_sheet_path = setup.SPRITE_SHEET_PATH
         self.sprite_sheet = pyg.image.load(sprite_sheet_path).convert()
         #make all the black transparent to avoid weird box around the sprites
         self.sprite_sheet.set_colorkey((0,0,0))
@@ -133,8 +142,8 @@ class Graphics:
         return sprite
 
     def scale_sprite(self, sprite):
-        width = sprite.get_width() * SCALE
-        height = sprite.get_height() * SCALE
+        width = sprite.get_width() * self.setup.SCALE
+        height = sprite.get_height() * self.setup.SCALE
         return pyg.transform.scale(sprite, (int(width), int(height)))
 
     def scale_sprites(self, sprites: dict):
@@ -284,7 +293,7 @@ class elements(Enum):
 
 #Moveable objects consist of pacman and the ghosts and are any sprite that can move
 class Moveable:
-    def __init__(self, position, sprites):
+    def __init__(self, position, sprites, setup):
         #tuple of the position of the center of the object in terms of pixels of the unscaled sprite
         #tuple of the position of pacman in terms of cells in the maze
         self.position = position
@@ -297,6 +306,7 @@ class Moveable:
         self.open = False
         #keep track of displaying if frightened
         self.flash = False
+        self.setup = setup
 
     #determine current displacemendt covered in one screen by pacman according to his curret speed
     def displacement(self): 
@@ -467,7 +477,7 @@ class Moveable:
                 sprite = self.sprites['right'][1]
 
         #since position is at the center point of pacman we need to adjust the position to the top left corner of the spritea
-        screen.blit(sprite, ((x*8+sub_x-4)*SCALE, (y*8+sub_y-4)*SCALE))
+        screen.blit(sprite, ((x*8+sub_x-4)*self.setup.SCALE, (y*8+sub_y-4)*self.setup.SCALE))
 
     #check if object runs into another movable object, returns true if there is a collision and false otherwise
     def collision(self, other : 'Ghost'):
@@ -478,10 +488,11 @@ class Moveable:
             return False
     
 class Pacman(Moveable):
-    def __init__(self, sprites, player):
-        starting_position = PACMAN_START
+    def __init__(self, sprites, player, setup):
+        self.setup = setup
+        starting_position = setup.PACMAN_START
         #construct a moveable object with the starting position
-        super().__init__(starting_position, sprites)
+        super().__init__(starting_position, sprites, setup)
 
         #change sub position for display 
         self.subposition = (5,0)
@@ -510,7 +521,7 @@ class Pacman(Moveable):
 
     #reset pacman to starting position
     def reset(self):
-        self.position = PACMAN_START
+        self.position = self.setup.PACMAN_START
         self.direction = Direction.STOP
         self.subposition = (5,0)
         self.buffered = Direction.STOP
@@ -601,12 +612,12 @@ class Pacman(Moveable):
         super().display(screen)
         #display text
         font = pyg.font.Font(None, 36)
-        text = ARCADE_FONT.render(f'Score: {self.player.score}', True, (255, 255, 255))
-        screen.blit(text, (10, SCREEN_HEIGHT - 90))
-        text = ARCADE_FONT.render(f'Lives: {self.player.lives}', True, (255, 255, 255))
-        screen.blit(text, (10, SCREEN_HEIGHT - 30))
-        text = ARCADE_FONT.render(f'SC?: {self.is_supercharged}', True, (255, 255, 255))
-        screen.blit(text, (250, SCREEN_HEIGHT - 30))
+        text = self.setup.ARCADE_FONT.render(f'Score: {self.player.score}', True, (255, 255, 255))
+        screen.blit(text, (10, self.setup.SCREEN_HEIGHT - 90))
+        text = self.setup.ARCADE_FONT.render(f'Lives: {self.player.lives}', True, (255, 255, 255))
+        screen.blit(text, (10, self.setup.SCREEN_HEIGHT - 30))
+        text = self.setup.ARCADE_FONT.render(f'SC?: {self.is_supercharged}', True, (255, 255, 255))
+        screen.blit(text, (250, self.setup.SCREEN_HEIGHT - 30))
         # text = ARCADE_FONT.render(f'Direction: {self.direction}', True, (255, 255, 255))
         # screen.blit(text, (10, SCREEN_HEIGHT - 30))
         # text = ARCADE_FONT.render(f'Buffered: {self.buffered}', True, (255, 255, 255))
@@ -615,10 +626,11 @@ class Pacman(Moveable):
 
 
 class Ghost(Moveable):
-    def __init__(self, color, sprites, frightened_sprites):
+    def __init__(self, color, sprites, frightened_sprites, setup):
+        self.setup = setup
         #every ghost except blinky starts in cage
-        self.position = CAGE_CORDS
-        super().__init__(self.position, sprites)
+        self.position = self.setup.CAGE_CORDS
+        super().__init__(self.position, sprites, setup)
         self.frightened_sprites = frightened_sprites
         self.sub_position = (0,0)
         self.color = color
@@ -641,7 +653,7 @@ class Ghost(Moveable):
     
     #reset the ghost to the cage after pacman death
     def reset(self):
-        self.position = CAGE_CORDS
+        self.position = self.setup.CAGE_CORDS
         self.direction = Direction.STOP
         self.subposition = (0,0)
         self.mode = 'chase'
@@ -650,13 +662,13 @@ class Ghost(Moveable):
     #move the ghost out of the cage, to start chasign the player
     def leave_cage(self, maze):
         #first naviagate to the center of the cage
-        if self.position != CAGE_CORDS:
-            self.target_tile = CAGE_CORDS
+        if self.position != self.setup.CAGE_CORDS:
+            self.target_tile = self.setup.CAGE_CORDS
             self.choose_direction(maze)
             self.move(maze)
         
         #if the ghost is in the middle of the cage forciblly move him out of the cage
-        elif self.position == CAGE_CORDS:
+        elif self.position == self.setup.CAGE_CORDS:
             self.position = (self.position[0], self.position[1] - 2)
             self.subposition = (0,0)
             self.direction = Direction.UP
@@ -748,7 +760,7 @@ class Ghost(Moveable):
             elif self.direction == Direction.RIGHT or self.direction == Direction.STOP:
                 sprite = self.sprites['right'][2]
             #since position is at the center point of pacman we need to adjust the position to the top left corner of the spritea
-            screen.blit(sprite, ((x*8+sub_x-4)*SCALE, (y*8+sub_y-4)*SCALE))
+            screen.blit(sprite, ((x*8+sub_x-4)*self.setup.SCALE, (y*8+sub_y-4)*self.setup.SCALE))
         
         #display frightened mode
         elif self.mode == 'frightened':
@@ -772,7 +784,7 @@ class Ghost(Moveable):
                     sprite = self.frightened_sprites[3]
 
             #since position is at the center point of pacman we need to adjust the position to the top left corner of the spritea
-            screen.blit(sprite, ((x*8+sub_x-4)*SCALE, (y*8+sub_y-4)*SCALE))
+            screen.blit(sprite, ((x*8+sub_x-4)*self.setup.SCALE, (y*8+sub_y-4)*self.setup.SCALE))
 
     #during firghtened mode the ghost will move in the opposite direction
     def reverse_direction(self):
@@ -839,13 +851,13 @@ class Ghost(Moveable):
     
         elif self.mode == 'frightened':
             #if the ghost is eaten by pacman, he will move to the front of the cage which is Blinky's starting position
-            if self.is_eaten and self.position != BLINKY_CAGE_CORDS:
-                self.target_tile = BLINKY_CAGE_CORDS
+            if self.is_eaten and self.position != self.setup.BLINKY_CAGE_CORDS:
+                self.target_tile = self.setup.BLINKY_CAGE_CORDS
                 self.choose_direction(maze)
                 self.move(maze)
 
             #reached starting point, ghost respawns and is no longer frightened even if pacman is supercharges
-            elif self.is_eaten and self.position == BLINKY_CAGE_CORDS:
+            elif self.is_eaten and self.position == self.setup.BLINKY_CAGE_CORDS:
                 self.is_eaten = False
                 self.mode = 'chase'
 
@@ -859,17 +871,17 @@ class Ghost(Moveable):
 
 
 class Blinky(Ghost):
-    def __init__(self, sprite, frightened_sprites):
-        super().__init__('red', sprite, frightened_sprites)
+    def __init__(self, sprite, frightened_sprites,setup):
+        super().__init__('red', sprite, frightened_sprites,setup)
         #blinky starts outside of the cage
-        self.position = BLINKY_CAGE_CORDS
+        self.position = setup.BLINKY_CAGE_CORDS
         self.left_cage = True
         #many of the ghosts scatter tiles are inaccesible, but this does not affect pathfinding to it 
         self.scatter_tile = 25, -3
 
     #reset the ghost to the cage after pacman death
     def reset(self):
-        self.position = BLINKY_CAGE_CORDS
+        self.position = self.setup.BLINKY_CAGE_CORDS
         self.direction = Direction.STOP
         self.subposition = (0,0)
         self.mode = 'chase'
@@ -879,8 +891,8 @@ class Blinky(Ghost):
         self.target_tile = pacman.position
 
 class Pinky(Ghost):
-    def __init__(self, sprite, frightened_sprites):
-        super().__init__('pink', sprite, frightened_sprites)
+    def __init__(self, sprite, frightened_sprites,setup):
+        super().__init__('pink', sprite, frightened_sprites, setup)
         #many of the ghosts scatter tiles are inaccesible, but this does not affect pathfinding to it 
         self.scatter_tile = (2,-3)
 
@@ -898,8 +910,8 @@ class Pinky(Ghost):
 
 
 class Inky(Ghost):
-    def __init__(self, sprite, frightened_sprites):
-        super().__init__('cyan', sprite, frightened_sprites)
+    def __init__(self, sprite, frightened_sprites, setup):
+        super().__init__('cyan', sprite, frightened_sprites, setup)
         self.scatter_tile = (27, 33)
 
     '''
@@ -944,13 +956,13 @@ class Inky(Ghost):
     
         elif self.mode == 'frightened':
             #if the ghost is eaten by pacman, he will move to the front of the cage which is Blinky's starting position
-            if self.is_eaten and self.position != BLINKY_CAGE_CORDS:
-                self.target_tile = BLINKY_CAGE_CORDS
+            if self.is_eaten and self.position != self.setup.BLINKY_CAGE_CORDS:
+                self.target_tile = self.setup.BLINKY_CAGE_CORDS
                 self.choose_direction(maze)
                 self.move(maze)
 
             #reached starting point, ghost respawns and is no longer frightened even if pacman is supercharges
-            elif self.is_eaten and self.position == BLINKY_CAGE_CORDS:
+            elif self.is_eaten and self.position == self.setup.BLINKY_CAGE_CORDS:
                 self.is_eaten = False
                 self.mode = 'chase'
 
@@ -962,8 +974,8 @@ class Inky(Ghost):
 
 
 class Clyde(Ghost):
-    def __init__(self,sprite, frightened_sprites):
-        super().__init__('orange', sprite, frightened_sprites)
+    def __init__(self,sprite, frightened_sprites, setup):
+        super().__init__('orange', sprite, frightened_sprites, setup)
         self.scatter_tile = (0,33)
 
     def chase(self, pacman, maze):
@@ -987,7 +999,8 @@ class Background:
 
 #represents the maze and its walls
 class Maze:
-    def __init__(self, sprites):
+    def __init__(self, sprites, setup):
+        self.setup = setup
         #load all the sprites for the maze background such as the pellet, power pellet and the background itself
         self.sprites = sprites
         '''
@@ -1029,7 +1042,7 @@ class Maze:
         ]
 
         #keep track of where pellets are on the maze
-        self.maze_elems = [[elements.EMPTY for x in range(X_CELLS)] for y in range(Y_CELLS)]
+        self.maze_elems = [[elements.EMPTY for x in range(self.setup.X_CELLS)] for y in range(self.setup.Y_CELLS)]
         #start with the pellets in their initial positions
         self.fill_maze()
 
@@ -1048,13 +1061,13 @@ class Maze:
         for y in range(len(self.maze_boundaries)):
             for x in range(len(self.maze_boundaries[y])):
                 if self.maze_boundaries[y][x] == 1:
-                    pyg.draw.rect(screen, (random.randint(0,255), random.randint(0,255), random.randint(0,255)), (x*8*SCALE, y*8*SCALE, 8*SCALE, 8*SCALE))
+                    pyg.draw.rect(screen, (random.randint(0,255), random.randint(0,255), random.randint(0,255)), (x*8*self.setup.SCALE, y*8*self.setup.SCALE, 8*self.setup.SCALE, 8*self.setup.SCALE))
         pyg.display.flip()
 
     #fill maze with the correct ellements
     def fill_maze(self):
-        for y in range(Y_CELLS):
-            for x in range(X_CELLS):
+        for y in range(self.setup.Y_CELLS):
+            for x in range(self.setup.X_CELLS):
                 #place wall objects at boundaries 
                 if self.maze_boundaries[y][x] == 1:
                     self.maze_elems[y][x] = elements.WALL
@@ -1073,13 +1086,22 @@ class Maze:
                 else:
                     self.maze_elems[y][x] = elements.EMPTY
     
+    def pellets_eaten(self):
+        remaining = 0
+        for y in range(self.setup.Y_CELLS):
+            for x in range(self.setup.X_CELLS):
+                if self.maze_elems[y][x] == elements.PELLET:
+                    remaining += 1
+        #starts with 240 pellets 240-remaining is the number of pellets he has eaten
+        return 240 - remaining
+
     #place a cherry on the board
     def place_cherry(self):
         placed = False
         #find a random location to place the 
         while not placed:
-            random_x = random.randint(0, X_CELLS - 1)
-            random_y = random.randint(0, Y_CELLS - 1)
+            random_x = random.randint(0, self.setup.X_CELLS - 1)
+            random_y = random.randint(0, self.setup.Y_CELLS - 1)
             #cherry must be placed on an open space, can't be placed inside the cage
             if (not (random_y > 12 and random_y < 16)) and self.maze_elems[random_y][random_x] == elements.EMPTY:
                 self.maze_elems[random_y][random_x] = elements.CHERRY
@@ -1087,8 +1109,8 @@ class Maze:
         
     def construct_graph(self):
         graph = {}
-        for y in range(Y_CELLS):
-            for x in range(X_CELLS):
+        for y in range(self.setup.Y_CELLS):
+            for x in range(self.setup.X_CELLS):
                 if self.maze_boundaries[y][x] == 0:  # Only consider empty spaces
                     neighbors = []
                     #consider the tunnel as a connection between the two points
@@ -1102,11 +1124,11 @@ class Maze:
                     else:
                         if y > 0 and self.maze_boundaries[y - 1][x] == 0:
                             neighbors.append((x, y - 1))
-                        if y < Y_CELLS - 1 and self.maze_boundaries[y + 1][x] == 0:
+                        if y < self.setup.Y_CELLS - 1 and self.maze_boundaries[y + 1][x] == 0:
                             neighbors.append((x, y + 1))
                         if x > 0 and self.maze_boundaries[y][x - 1] == 0:
                             neighbors.append((x - 1, y))
-                        if x < X_CELLS - 1 and self.maze_boundaries[y][x + 1] == 0:
+                        if x < self.setup.X_CELLS - 1 and self.maze_boundaries[y][x + 1] == 0:
                             neighbors.append((x + 1, y))
                     
 
@@ -1121,37 +1143,38 @@ class Maze:
         #display the background
         screen.blit(self.sprites['background'], (0, 0))
         #add the pixels and power pellets ontop of background
-        for y in range(Y_CELLS):
-            for x in range(X_CELLS):
+        for y in range(self.setup.Y_CELLS):
+            for x in range(self.setup.X_CELLS):
                 if self.maze_elems[y][x] == elements.PELLET:
-                    screen.blit(self.sprites['pellet'], (x*8*SCALE, y*8*SCALE))
+                    screen.blit(self.sprites['pellet'], (x*8*self.setup.SCALE, y*8*self.setup.SCALE))
                 elif self.maze_elems[y][x] == elements.POWER_PELLET:
-                    screen.blit(self.sprites['power_pellet'], (x*8*SCALE, y*8*SCALE))
+                    screen.blit(self.sprites['power_pellet'], (x*8*self.setup.SCALE, y*8*self.setup.SCALE))
                 elif self.maze_elems[y][x] == elements.CHERRY:
-                    screen.blit(self.sprites['cherry'], (x*8*SCALE, y*8*SCALE))
+                    screen.blit(self.sprites['cherry'], (x*8*self.setup.SCALE, y*8*self.setup.SCALE))
 
 
 
 
 class Game:
-    def __init__(self, screen, clock, is_displaying):
-        self.screen = screen
+    def __init__(self, setup, clock, is_displaying):
+        self.setup = setup
+        self.screen = setup.SCREEN
         #initialize the graphics wiht the sprite sheet containing all images of pacman and ghosts
-        graphics = Graphics(sprite_sheet_path)
+        graphics = Graphics(self.setup)
 
         #initialize player and game variables
         self.player = Player('Schools Dollar')
 
         #set up the sprites
         pacman_sprites, ghost_sprites, background_sprites = graphics.load_sprites()
-        self.pacman = Pacman(pacman_sprites, self.player)
+        self.pacman = Pacman(pacman_sprites, self.player, self.setup)
         self.ghosts = {
-            'blinky': Blinky(ghost_sprites['blinky'], ghost_sprites['frightened']),
-            'pinky': Pinky(ghost_sprites['pinky'], ghost_sprites['frightened']),
-            'inky': Inky(ghost_sprites['inky'],ghost_sprites['frightened']),
-            'clyde': Clyde(ghost_sprites['clyde'],ghost_sprites['frightened'])
+            'blinky': Blinky(ghost_sprites['blinky'], ghost_sprites['frightened'],self.setup),
+            'pinky': Pinky(ghost_sprites['pinky'], ghost_sprites['frightened'],self.setup),
+            'inky': Inky(ghost_sprites['inky'],ghost_sprites['frightened'],self.setup),
+            'clyde': Clyde(ghost_sprites['clyde'],ghost_sprites['frightened'],self.setup)
         }
-        self.maze = Maze(background_sprites)
+        self.maze = Maze(background_sprites, self.setup)
 
         self.is_displaying = is_displaying
 
@@ -1205,13 +1228,13 @@ class Game:
             sprite = self.pacman.sprites['start'][0]
             x,y = self.pacman.position
             sub_x, sub_y = self.pacman.subposition
-            screen.blit(sprite, ((x*8+sub_x-4)*SCALE, (y*8+sub_y-4)*SCALE))        
+            self.screen.blit(sprite, ((x*8+sub_x-4)*self.setup.SCALE, (y*8+sub_y-4)*self.setup.SCALE))        
             for ghost in self.ghosts.values():
                 ghost.display(self.screen, flash = False)
                 
             #render ready text on middle of screen
-            text = ARCADE_FONT_LARGE.render('READY?', True, (255, 255, 255))
-            self.screen.blit(text, (SCREEN_WIDTH/2.75,SCREEN_HEIGHT/2.1))
+            text = self.setup.ARCADE_FONT_LARGE.render('READY?', True, (255, 255, 255))
+            self.screen.blit(text, (self.setup.SCREEN_WIDTH/2.75, self.setup.SCREEN_HEIGHT/2.1))
 
         #increment frame counter
         self.start_frame += 1
@@ -1272,7 +1295,7 @@ class Game:
         #since position is at the center point of pacman we need to adjust the position to the top left corner of the spritea
         x,y = self.pacman.position
         sub_x, sub_y = self.pacman.subposition
-        screen.blit(death_sprite, ((x*8+sub_x-4)*SCALE, (y*8+sub_y-4)*SCALE))        
+        self.screen.blit(death_sprite, ((x*8+sub_x-4)*self.setup.SCALE, (y*8+sub_y-4)*self.setup.SCALE))        
 
         #end the reset
         if (self.death_frame == self.death_end_frames-1):
@@ -1282,7 +1305,7 @@ class Game:
             #this will cause the game to run the start animation again and reset the board
             self.starting_up = True
             #reset ghost and pacman positions
-            self.pacman.position = PACMAN_START
+            self.pacman.position = self.setup.PACMAN_START
 
     def update(self):
         
@@ -1345,8 +1368,8 @@ class Game:
 
     #check if all pellets, powerp, and cherry's have been eaten, if so return true and end game with win
     def check_win(self):
-        for y in range(Y_CELLS):
-            for x in range(X_CELLS):
+        for y in range(self.setup.Y_CELLS):
+            for x in range(self.setup.X_CELLS):
                 if self.maze.maze_elems[y][x] == elements.PELLET or self.maze.maze_elems[y][x] == elements.POWER_PELLET or self.maze.maze_elems[y][x] == elements.CHERRY:
                     return False
         return True
@@ -1486,24 +1509,26 @@ class Game:
     def game_over(self):
         #fill screen with black and display text sayinng you lose
         self.screen.fill((0,0,0))
-        text = ARCADE_FONT_LARGE.render('GAME OVER', True, (255, 255, 255))
-        self.screen.blit(text, (SCREEN_WIDTH/3,SCREEN_HEIGHT/2))
+        text = self.setup.ARCADE_FONT_LARGE.render('GAME OVER', True, (255, 255, 255))
+        self.screen.blit(text, (self.setup.SCREEN_WIDTH/3,self.setup.SCREEN_HEIGHT/2))
         #display final score
-        text = ARCADE_FONT.render(f'Final Score: {self.player.score}', True, (255, 255, 255))
-        self.screen.blit(text, (SCREEN_WIDTH/3,SCREEN_HEIGHT/1.5))
+        text = self.setup.ARCADE_FONT.render(f'Final Score: {self.player.score}', True, (255, 255, 255))
+        self.screen.blit(text, (self.setup.SCREEN_WIDTH/3,self.setup.SCREEN_HEIGHT/1.5))
         self.game_over_bool = True
         #cut all noise
         SoundEffects.background_channel.stop()
     
     #display win screen and final points
     def win(self):
-        #fill screen with black and display text sayinng you lose
-        self.screen.fill((255,255,255))
-        text = ARCADE_FONT_LARGE.render('YOU WIN', True, (0, 0, 0))
-        self.screen.blit(text, (SCREEN_WIDTH/3,SCREEN_HEIGHT/2))
-        #display final score
-        text = ARCADE_FONT.render(f'Final Score: {self.player.score}', True, (0, 0, 0))
-        self.screen.blit(text, (SCREEN_WIDTH/3,SCREEN_HEIGHT/1.5))
+        if self.is_displaying:
+            #fill screen with black and display text sayinng you lose
+            self.screen.fill((255,255,255))
+            text = self.setup.ARCADE_FONT_LARGE.render('YOU WIN', True, (0, 0, 0))
+            self.screen.blit(text, (self.setup.SCREEN_WIDTH/3,self.setup.SCREEN_HEIGHT/2))
+            #display final score
+            text = self.setup.ARCADE_FONT.render(f'Final Score: {self.player.score}', True, (0, 0, 0))
+            self.screen.blit(text, (self.setup.SCREEN_WIDTH/3,self.setup.SCREEN_HEIGHT/1.5))
+
         #right as win start the win music
         if not self.game_over_bool and self.is_displaying:
             #cut all noise
@@ -1511,6 +1536,8 @@ class Game:
             #play win noise
             SoundEffects.background_channel.play(SoundEffects.win_effect, loops=-1)
         self.game_over_bool = True
+        self.won = True
+
 
 
     def draw_screen(self):
@@ -1532,18 +1559,18 @@ class Game:
 
         #show cherry in bottom right if hasn't been placed
         if not self.cherry_placed:
-            self.screen.blit(self.maze.sprites['cherry'], (SCREEN_WIDTH - 2*8*SCALE, SCREEN_HEIGHT - 2*8*SCALE))
+            self.screen.blit(self.maze.sprites['cherry'], (self.setup.SCREEN_WIDTH - 2*8*self.setup.SCALE, self.setup.SCREEN_HEIGHT - 2*8*self.setup.SCALE))
         #debug
         font = pyg.font.Font(None, 36)
-        text = ARCADE_FONT.render(f'FPS: {self.clock.get_fps()}', True, (255, 255, 255))
+        text = self.setup.ARCADE_FONT.render(f'FPS: {self.clock.get_fps()}', True, (255, 255, 255))
         self.screen.blit(text, (450,10))
         #text = ARCADE_FONT.render(f'Mode: {self.mode}', True, (255, 255, 255))
         #self.screen.blit(text, (250, SCREEN_HEIGHT - 30))
 
 class Genetic_Game(Game):
 
-    def __init__(self, screen, clock, gene, is_displaying):
-        super().__init__(screen, clock, is_displaying)
+    def __init__(self, setup, clock, gene, is_displaying):
+        super().__init__(setup, clock, is_displaying)
         self.gene = gene.upper()
         self.genetic_moves = iter(self.gene)
                 #map of moves to directions
@@ -1568,6 +1595,9 @@ class Genetic_Game(Game):
         self.game_ticks_paused = False
         #keep track of when in frightened mode
         self.frightened_ticks_paused = True
+
+        #keep track of wether the game has been won or lost
+        self.won = False
 
     #helper functions to convert between ticks and second, conversion is each tick is 1/60 of a second
     def ticks_to_seconds(self, ticks):
@@ -1759,10 +1789,10 @@ class Genetic_Game(Game):
 
         #show cherry in bottom right if hasn't been placed
         if not self.cherry_placed:
-            self.screen.blit(self.maze.sprites['cherry'], (SCREEN_WIDTH - 2*8*SCALE, SCREEN_HEIGHT - 2*8*SCALE))
+            self.screen.blit(self.maze.sprites['cherry'], (self.setup.SCREEN_WIDTH - 2*8*self.setup.SCALE, self.setup.SCREEN_HEIGHT - 2*8*self.setup.SCALE))
         #debug
         font = pyg.font.Font(None, 36)
-        text = ARCADE_FONT.render(f'FPS: {self.clock.get_fps()}', True, (255, 255, 255))
+        text = self.setup.ARCADE_FONT.render(f'FPS: {self.clock.get_fps()}', True, (255, 255, 255))
         self.screen.blit(text, (450,10))
         #text = ARCADE_FONT.render(f'Mode: {self.mode}', True, (255, 255, 255))
         #self.screen.blit(text, (250, SCREEN_HEIGHT - 30))
@@ -1785,7 +1815,8 @@ class Player:
 def main():
     # Create the game
     clock = pyg.time.Clock()
-    game = Game(screen, clock, True)
+    setup = Game_Setup()
+    game = Game(setup, clock, True)
 
     # Main game loop
     while True:
@@ -1804,7 +1835,8 @@ class Pacman_Game():
     def test_game(self, frame_rate):
         # Create the game
         clock = pyg.time.Clock()
-        game = Game(screen, clock, True)
+        setup = Game_Setup()
+        game = Game(setup, clock, True)
 
         # Main game loop
         while True:
@@ -1831,9 +1863,9 @@ class Pacman_Game():
         moves = move_string.upper()
         print(moves)
         move_iter = iter(moves)
-
+        setup = Game_Setup()
         # Create the game
-        game = Game(screen, pyg.time.Clock(), False)
+        game = Game(setup, pyg.time.Clock(), False)
         while True:
             try:
                 move = next(move_iter)
@@ -1843,10 +1875,12 @@ class Pacman_Game():
     def genetic_test(self, gene):
         # Create the game
         clock = pyg.time.Clock()
+        setup = Game_Setup()
+
         best_score = 0
         is_displaying = False
-        for i in range(1):
-            game = Genetic_Game(screen, clock, gene, is_displaying)
+        for i in range(100):
+            game = Genetic_Game(setup, clock, gene, is_displaying)
             # Main game loop
             while game.game_over_bool != True:
 
