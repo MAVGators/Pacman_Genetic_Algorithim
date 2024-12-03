@@ -7,15 +7,13 @@ import os
 
 
 
-# Initialize pygame
-pyg.init()
 
 '''
 VERY IMPORTANT HELPER FUNCTION WHICH ALLOWS YOU TO PLAY SOUND FOR PACMAN GAME BY READING THE SOUND FILES FROM THE SAME DIRECTORY AS THE GAME
 '''
 
 
-
+pyg.init()
 
 #contain basic game setup information and graphics
 class Game_Setup:
@@ -105,7 +103,6 @@ class Stopwatch:
     
 
 class SoundEffects:
-    
     eating_channel = pyg.mixer.Channel(0)
     background_channel = pyg.mixer.Channel(1)
     startup_channel = pyg.mixer.Channel(2)
@@ -523,7 +520,7 @@ class Pacman(Moveable):
     def reset(self):
         self.position = self.setup.PACMAN_START
         self.direction = Direction.STOP
-        self.subposition = (5,0)
+        self.subposition = (0,0)
         self.buffered = Direction.STOP
         self.is_supercharged = False
 
@@ -1054,7 +1051,10 @@ class Maze:
         #graphical representation of the maze for the ghosts path finding
         self.graph = self.construct_graph()
 
-    
+    #completely reset the maze without reloading the sprites
+    def reset(self):
+        self.maze_elems = [[elements.EMPTY for x in range(self.setup.X_CELLS)] for y in range(self.setup.Y_CELLS)]
+        self.fill_maze()
 
     #color all collision objects in the maze
     def debug_display_maze(self, screen):
@@ -1151,8 +1151,6 @@ class Maze:
                     screen.blit(self.sprites['power_pellet'], (x*8*self.setup.SCALE, y*8*self.setup.SCALE))
                 elif self.maze_elems[y][x] == elements.CHERRY:
                     screen.blit(self.sprites['cherry'], (x*8*self.setup.SCALE, y*8*self.setup.SCALE))
-
-
 
 
 class Game:
@@ -1422,8 +1420,8 @@ class Game:
                 #show eaten
                 self.draw_screen()
                 #pause the game for 1 seconds
-                self.game_timer.pause()
-                self.frightened_timer.pause()
+                #self.game_timer.pause()
+                #self.frightened_timer.pause()
                 #cut all other noises
                 if self.is_displaying:
                     SoundEffects.background_channel.stop()
@@ -1432,8 +1430,8 @@ class Game:
                 #wait for 1 seconds
                 #time.sleep(1)
                 #unpause the game
-                self.game_timer.unpause()
-                self.frightened_timer.unpause()
+                #self.game_timer.unpause()
+                #self.frightened_timer.unpause()
                 if self.is_displaying:
                     #start playing normal background music
                     SoundEffects.background_channel.play(SoundEffects.frightened_effect, loops = -1)
@@ -1599,15 +1597,73 @@ class Genetic_Game(Game):
         #keep track of wether the game has been won or lost
         self.won = False
 
+        #determines how many moves each gene maps to
+        self.gene_multiplier = 1
+        self.gene_current_number = 0
+
     #helper functions to convert between ticks and second, conversion is each tick is 1/60 of a second
     def ticks_to_seconds(self, ticks):
         return ticks/60
     def seconds_to_ticks(self, seconds):
         return seconds*60
     
+    #restart the game completely without having to reload objects
+    def complete_restart(self, new_gene):
+        self.gene = new_gene.upper()
+        self.genetic_moves = iter(self.gene)
+
+        self.ticks = {
+            'game': 0,
+            'frightened': 0
+        }
+
+        #used to pause flow of game when in interupting mode like frightened or death
+        self.game_ticks_paused = False
+        #keep track of when in frightened mode
+        self.frightened_ticks_paused = True
+
+        #keep track of wether the game has been won or lost
+        self.won = False
+
+        #determines how many moves each gene maps to
+        self.gene_multiplier = 1
+        self.gene_current_number = 0
+
+        self.player = Player('Schools Dollar')
+
+        self.start_frame = 0
+        self.starting_up = True
+        #frame on which the starting animation ends
+        self.end_frames = 10
+
+        self.death_frame = 0
+        self.death_end_frames = 10
+
+        self.is_dead = False
+
+                #how mnay seconds the ghosts will be frightened for
+        self.frightened_time = 10
+
+        #keep track of what mode the ghosts are in
+        self.mode = 'scatter'
+
+        #keep track of wether a cherry has been placed or not
+        self.cherry_placed = False
+
+        #keep track of when game ends
+        self.game_over_bool = False
+        self.maze.reset()
+        self.pacman.reset()
+        for ghost in self.ghosts.values():
+            ghost.reset()
+        self.pacman.player = self.player
+
+
+
 
     #Execute the gene by reading through the chromome and returning the next move in the sequence
     def choose_gene_move(self):
+
         next_move = next(self.genetic_moves, 'N')
         if next_move == 'N':
             return self.last_move
@@ -1650,7 +1706,9 @@ class Genetic_Game(Game):
         if not self.mode == 'frightened':
             self.choose_mode()
         #attempt to place the cherry on the board
-        self.place_cherry()
+
+        #TEMPORARILY REMOVING FOR TESTING
+        #self.place_cherry()
 
         gene_move_direction = self.choose_gene_move()
         Pacman.change_direction(self.pacman, gene_move_direction, self.maze)
@@ -1805,14 +1863,16 @@ class Player:
         self.lives = 1
 
     def update_score(self, points):
-        pass
+        self.score+=points
 
     def lose_life(self):
-        pass
+        self.lives -= 1
 
 
 
 def main():
+    # Initialize pygame
+
     # Create the game
     clock = pyg.time.Clock()
     setup = Game_Setup()
@@ -1900,4 +1960,5 @@ class Pacman_Game():
         
 
 if __name__ == "__main__":
+
     main()
