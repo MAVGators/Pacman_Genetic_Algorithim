@@ -16,10 +16,10 @@ class Genetics():
         self.clock = pyg.time.Clock()
         self.SETUP = Game_Setup()
         self.test_gene = 'LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUULLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD'
-        self.population_size = 200
-        self.gene_length = 1000
+        self.population_size = 100
+        self.gene_length = 10000
         self.mutation_rate = 0.02
-        self.generations = 200
+        self.generations = 100
 
 
 
@@ -49,7 +49,7 @@ class Genetics():
         return child1, child2
     
 
-    def run_genetic_algorithm(self):        
+    def run_genetic_algorithm(self):
         start_time = time.time()
 
         population = self.initialize_population()
@@ -64,31 +64,33 @@ class Genetics():
 
         best_all_time_score = 0
         best_all_time_gene = ''
-        
-        #test game that will be restarted for each trial of the gene
-        game = Genetic_Game(self.SETUP, self.clock, self.test_gene, is_displaying=False)
 
         for generation in range(self.generations):
-            fitness_scores = [self.fitness(self.run_specific_game(game, gene, is_displaying=False)) for gene in population]
+            fitness_scores = [self.fitness(self.run_game(gene, is_displaying=False)) for gene in population]
             
             best_fitness = max(fitness_scores)
             average_fitness = sum(fitness_scores) / len(fitness_scores)
             best_fitness_scores.append(best_fitness)
             average_fitness_scores.append(average_fitness)
 
-            #new best move found
+            # new best move found
             if best_fitness > best_all_time_score:
                 best_all_time_score = best_fitness
                 best_all_time_gene = population[fitness_scores.index(max(fitness_scores))]
                 with open('best_gene.txt', 'a') as file:
                     file.write(f'Score: {best_fitness}, NEW BEST GENE: {best_all_time_gene} \n')
 
-            new_population = []
-            for _ in range(self.population_size // 2):
+            # Elitism: carry the best genes to the next generation
+            elite_size = 2
+            sorted_population = [gene for _, gene in sorted(zip(fitness_scores, population), reverse=True)]
+            new_population = sorted_population[:elite_size]
+
+            while len(new_population) < self.population_size:
                 parent1, parent2 = self.select_parents(population, fitness_scores)
                 child1, child2 = self.crossover(parent1, parent2)
                 new_population.append(self.mutate(child1))
-                new_population.append(self.mutate(child2))
+                if len(new_population) < self.population_size:
+                    new_population.append(self.mutate(child2))
             
             population = new_population
 
@@ -108,9 +110,6 @@ class Genetics():
             if 'elapsed_time_text' not in locals():
                 elapsed_time_text = ax.text(0.02, 0.95, '', transform=ax.transAxes)
             elapsed_time_text.set_text(f'Elapsed Time: {elapsed_time:.2f} seconds')
-
-
-
 
         plt.ioff()
         plt.show()
@@ -175,8 +174,8 @@ class Genetics():
     #fitness function which takes in a pacman game and uses the end state of the game to determine how well the pacman did
     def fitness(self, game):
         #constants for tuning weight of parameters
-        k_score = 1
-        k_time = 0.04
+        k_score = 0
+        k_time = 0.2
         k_pellets = 10
         #wins are highly desired especially in the beginning where all I really want is a pacman that wins
         k_win = 100000000000
@@ -261,10 +260,13 @@ def test_4():
     gen_alg = Genetics()
     print(gen_alg.run_genetic_algorithm())
 
-def test_5():
+def test_5(gene_score):
     gen_alg = Genetics()
-    gene = gen_alg.read_genes(880)
+    gene = gen_alg.read_genes(gene_score)
     game = gen_alg.run_game(gene, is_displaying=True)
+    print(f'FINAL SCORE: {game.player.score}')
+    print(f'FINAL TIME: {game.ticks["game"]}')
+
     print(f'FITNESS: {gen_alg.fitness(game)}')
 
 #test the speed of running a generation without mutating
@@ -289,12 +291,13 @@ def test_8():
 
 def main():
     start_time = time.time()
-    
     #test_1()
     #test_2()
     #test_3()
+    #training
     #test_4()
-    test_5()
+    #display result
+    test_5(2000)
     #test_6()
     #test_7()
     #test_8()

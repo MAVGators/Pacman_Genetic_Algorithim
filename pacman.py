@@ -295,7 +295,7 @@ class Moveable:
         #tuple of the position of pacman in terms of cells in the maze
         self.position = position
         #integer between 0-8 representing the subposition of pacman in the cell in terms of pixels from the center of tile he is
-        self.subposition = (0,0)
+        self.subposition = (0,5)
         self.direction = Direction.STOP
         #array of sprites with thier different orientations
         self.sprites = sprites
@@ -1313,7 +1313,7 @@ class Game:
             return
         
         #keep game completley over, place here to allow final death animation to play
-        elif self.player.lives == 0:
+        elif self.player.lives <= 0:
             self.game_over()
             return
         
@@ -1411,7 +1411,7 @@ class Game:
         for ghost in self.ghosts.values():
             #collision with pacman in normal state kills pacman
             if ghost.mode != 'frightened' and self.pacman.collision(ghost):
-                self.lose_life()
+                self.game_over_bool = True
                 self.is_dead = True
             #in frightened mode collision with ghost kills ghost
             elif ghost.mode == 'frightened' and self.pacman.collision(ghost):
@@ -1505,6 +1505,7 @@ class Game:
         self.reset_round()
 
     def game_over(self):
+        self.game_over_bool = True
         #fill screen with black and display text sayinng you lose
         self.screen.fill((0,0,0))
         text = self.setup.ARCADE_FONT_LARGE.render('GAME OVER', True, (255, 255, 255))
@@ -1512,7 +1513,6 @@ class Game:
         #display final score
         text = self.setup.ARCADE_FONT.render(f'Final Score: {self.player.score}', True, (255, 255, 255))
         self.screen.blit(text, (self.setup.SCREEN_WIDTH/3,self.setup.SCREEN_HEIGHT/1.5))
-        self.game_over_bool = True
         #cut all noise
         SoundEffects.background_channel.stop()
     
@@ -1688,7 +1688,7 @@ class Genetic_Game(Game):
             return
         
         #keep game completley over, place here to allow final death animation to play
-        elif self.player.lives == 0:
+        elif self.player.lives <= 0:
             self.game_over()
             return
         
