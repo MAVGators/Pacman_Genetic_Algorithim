@@ -348,6 +348,7 @@ class Moveable:
         return True
     
     #move the sprite during a frame based on its current direction
+    #returns true if the sprite moves to a new tile an dfalse if it does not
     def move(self, maze):
         x, y = self.position
         sub_x, sub_y = self.subposition
@@ -365,6 +366,8 @@ class Moveable:
                 self.open = not self.open
                 #alternate flashing in frightened mode
                 self.flash = not self.flash
+                return True
+            
             else:
                 #cannot make sub positio below 0
                 self.subposition = (sub_x,max(sub_y - self.displacement(),0))
@@ -379,6 +382,8 @@ class Moveable:
                 self.open = not self.open
                 #alternate flashing in frightened mode
                 self.flash = not self.flash
+                return True
+
             elif sub_x == 0:
                 self.subposition = (sub_x, min(sub_y + self.displacement(),8))
 
@@ -388,9 +393,11 @@ class Moveable:
                 if sub_x == 0 and sub_y==0:
                     self.position = maze.tunnel_right
                     self.subposition = (8, sub_y)
+                    return True
+
                 else:
                     self.subposition = (max(sub_x - self.displacement(), 0), sub_y)
-
+                
             #at edge of cell move to next cell
             elif sub_x == 0 and sub_y==0 and maze.maze_elems[y][x - 1] != elements.WALL:
                 self.position = (x - 1, y)
@@ -400,6 +407,8 @@ class Moveable:
                 self.open = not self.open
                 #alternate flashing in frightened mode
                 self.flash = not self.flash
+                return True
+            
             elif sub_y == 0:
                 self.subposition = (max(sub_x - self.displacement(), 0), sub_y)
 
@@ -409,6 +418,8 @@ class Moveable:
                 if sub_x == 8 and sub_y==0:
                     self.position = maze.tunnel_left
                     self.subposition = (0, sub_y)
+                    return True
+                
                 else:
                     self.subposition = (min(sub_x + self.displacement(),8), sub_y)
             
@@ -421,8 +432,44 @@ class Moveable:
                 self.open = not self.open
                 #alternate flashing in frightened mode
                 self.flash = not self.flash
+                return True
+
             elif sub_y == 0 and maze.maze_elems[y][x + 1] != elements.WALL:
                 self.subposition = (min(sub_x + self.displacement(),8), sub_y)
+            return False
+    '''
+    uses the same logic as move() to determine if pacman can enter a new grid cell and returns true if in the positon to move
+    into a new cell and false otherwise
+    '''
+    def can_move(self, maze):
+        x, y = self.position
+        sub_x, sub_y = self.subposition
+
+        
+        #MOVE UP CASE
+        if sub_y == 0 and sub_x == 0 and maze.maze_elems[y - 1][x] != elements.WALL:
+            return True
+        #MOVE DOWN CASE
+        if sub_y == 8 and sub_x == 0 and maze.maze_elems[y + 1][x] != elements.WALL:
+            return True
+        
+        #TUNNEL CASES
+        if x == maze.tunnel_left[0] and y == maze.tunnel_left[1] and sub_x == 0:
+            return True
+        if x == maze.tunnel_right[0] and y == maze.tunnel_right[1] and sub_x == 8:
+            return True
+        
+        #MOVE LEFT CASE
+        if sub_x == 0 and sub_y==0 and maze.maze_elems[y][x - 1] != elements.WALL:
+            return True
+        
+        #MOVE RIGHT CASE
+        if sub_x == 8 and sub_y==0 and maze.maze_elems[y][x + 1] != elements.WALL:
+            return True
+        
+        #not in a position to change grid squares
+        return False
+
 
     '''
     hellped function to check if the buffered direction is opposite a direction you
@@ -607,6 +654,9 @@ class Pacman(Moveable):
             maze[y][x] = elements.EMPTY
             self.player.score += 100
         
+
+        
+
 
     def display(self, screen):
         super().display(screen)
@@ -834,7 +884,7 @@ class Ghost(Moveable):
         #choose random direction
         directions = [direction for direction in possible_directions if possible_directions[direction] is not None and not super().check_opposite_drection(direction)]
         #if have reached edge of tile to turn that way do so, if not then wait 
-        self.change_direction(random.choice(directions), maze)
+        self.change_direction(directions[0], maze)
 
 
 
@@ -1315,7 +1365,7 @@ class Game:
             return
         
         #keep game completley over, place here to allow final death animation to play
-        elif self.player.lives == 0:
+        elif self.player.lives <= 0:
             self.game_over()
             return
         
@@ -1419,21 +1469,19 @@ class Game:
             elif ghost.mode == 'frightened' and self.pacman.collision(ghost):
                 ghost.is_eaten = True
                 self.player.update_score(200)
+
                 #show eaten
-                self.draw_screen()
-                #pause the game for 1 seconds
-                self.game_timer.pause()
-                self.frightened_timer.pause()
+                if self.is_displaying:
+                    self.draw_screen()
+
                 #cut all other noises
                 if self.is_displaying:
                     SoundEffects.background_channel.stop()
                     #play ghost eating noise
                     SoundEffects.ghost_eating_channel.play(SoundEffects.ghost_eating_effect)
                 #wait for 1 seconds
-                #time.sleep(1)
                 #unpause the game
-                self.game_timer.unpause()
-                self.frightened_timer.unpause()
+
                 if self.is_displaying:
                     #start playing normal background music
                     SoundEffects.background_channel.play(SoundEffects.frightened_effect, loops = -1)
@@ -1573,6 +1621,9 @@ class Genetic_Game(Game):
         super().__init__(setup, clock, is_displaying)
         self.gene = gene.upper()
         self.genetic_moves = iter(self.gene)
+        #first move to be executed
+        
+        self.last_move = self.gene[0]
                 #map of moves to directions
         self.direction_map = {
             'L': Direction.LEFT,
@@ -1585,7 +1636,8 @@ class Genetic_Game(Game):
         replacement for the ingame timers is to keep track of ticks
         if we assume we want this game to display on a 60fps screen when it is not being trained then 
         there should be 60 ticks per second meaning each tick is 1/60 of a second or approximately 16.6666666667 milliseconds
-        '''
+        ''' 
+
         self.ticks = {
             'game': 0,
             'frightened': 0
@@ -1608,11 +1660,20 @@ class Genetic_Game(Game):
 
     #Execute the gene by reading through the chromome and returning the next move in the sequence
     def choose_gene_move(self):
-        next_move = next(self.genetic_moves, 'N')
-        if next_move == 'N':
-            return self.last_move
-        self.last_move = next_move
-        return self.direction_map[next_move]
+
+        '''
+        PACMAN ONLY HAS THE ABILITY TO MOVE BETWEEN CELLS, MEANING
+        WHILE HE IS TRAVELLING IN THE "SUB POSITIONS" HE IS LOCKED INTO THE CURRENT DIRECTION HE IS ON
+        MEANING A NEW GENETIC MOVE WILL NOT BE EXECUTED UNTIL HE IS FINISHED
+        '''
+
+        if self.pacman.can_move(self.maze):
+            next_move = next(self.genetic_moves, 'N')
+            #if the next move is N then the gene is finished and keep in same direction
+            if next_move == 'N':
+                return self.last_move
+            self.last_move = next_move
+        return self.direction_map[self.last_move]
 
     def start(self):
         #reset ghost location 
@@ -1632,7 +1693,7 @@ class Genetic_Game(Game):
             return
         
         #keep game completley over, place here to allow final death animation to play
-        elif self.player.lives == 0:
+        elif self.player.lives <= 0:
             self.game_over()
             return
         
@@ -1650,7 +1711,8 @@ class Genetic_Game(Game):
         if not self.mode == 'frightened':
             self.choose_mode()
         #attempt to place the cherry on the board
-        self.place_cherry()
+        #temporarily remove for testing
+        #self.place_cherry()
 
         gene_move_direction = self.choose_gene_move()
         Pacman.change_direction(self.pacman, gene_move_direction, self.maze)
@@ -1660,13 +1722,16 @@ class Genetic_Game(Game):
         self.pacman.change_direction(self.pacman.buffered, self.maze)
         self.pacman.move(self.maze)
 
+        #check for collisions
+        self.handle_collisions()
         #check if pacman has eaten a power pellet
         self.check_frightened()
 
         self.move_ghosts()
-
-        #check for collisions
+        
+        #check for collisions both before and after movement to avoid clipping
         self.handle_collisions()
+
 
         #update the game ticks
         if not self.game_ticks_paused:
