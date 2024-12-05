@@ -17,12 +17,12 @@ class Genetics():
         self.clock = pyg.time.Clock()
         self.SETUP = Game_Setup()
         self.test_gene = 'LLUULLDD'
-        self.population_size = 400
-        self.gene_length = 400
-        self.starting_mutation_rate = 0.04
+        self.population_size = 1000
+        self.gene_length = 1000
+        self.starting_mutation_rate = 0.1
         self.muation_rate_decay = 0
         self.mutation_rate = self.starting_mutation_rate
-        self.generations = 400
+        self.generations = 1000
 
 
     def generate_initial_population(self):
@@ -113,7 +113,7 @@ class Genetics():
             with open(filename, 'a') as file:
                 file.write(f'Generation {generation + 1}, Fitness {best_fitness}: {best_gene}\n')
             
-            print(f'Generation {generation + 1} best fitness: {best_fitness}, Sim Time: {time.time() - start_time}')
+            print(f'Generation {generation + 1} Best fitness: {best_fitness}, Pellets Eaten: {game.maze.pellets_eaten()} Sim Time: {time.time() - start_time}')
 
             # Elitism: carry over the best genes to the new population
             num_elites = 1
@@ -160,7 +160,7 @@ class Genetics():
         #constants for tuning weight of parameters
         k_score = 0
         #turning off survival time for now, only care about pellets
-        k_time = 0.04
+        k_time = 0.00001
 
         k_pellets = 1
         #wins are highly desired especially in the beginning where all I really want is a pacman that wins
@@ -251,7 +251,7 @@ def main():
     #test_2()
     #test_3()
     train()
-    #test_gene(213,'best_gene_20241205-080915.txt')
+    #test_gene(60,'best_gene_20241205-141957.txt')
     end_time = time.time()
 
 
