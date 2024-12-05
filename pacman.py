@@ -470,6 +470,34 @@ class Moveable:
         #not in a position to change grid squares
         return False
 
+    #a more liberal verison of can_move that allows doesn't care which side of the cell pacman is on
+    def can_move_anywhere(self, maze):
+        x, y = self.position
+        sub_x, sub_y = self.subposition
+
+        #MOVE UP CASE
+        if sub_y == 0 and sub_x == 0:
+            return True
+        #MOVE DOWN CASE
+        if sub_y == 8 and sub_x == 0:
+            return True
+        
+        #TUNNEL CASES
+        if x == maze.tunnel_left[0] and y == maze.tunnel_left[1] and sub_x == 0:
+            return True
+        if x == maze.tunnel_right[0] and y == maze.tunnel_right[1] and sub_x == 8:
+            return True
+        
+        #MOVE LEFT CASE
+        if sub_x == 0 and sub_y==0:
+            return True
+        
+        #MOVE RIGHT CASE
+        if sub_x == 8 and sub_y==0:
+            return True
+        
+        #not in a position to change grid squares
+        return False
 
     '''
     hellped function to check if the buffered direction is opposite a direction you
@@ -666,7 +694,7 @@ class Pacman(Moveable):
         screen.blit(text, (10, self.setup.SCREEN_HEIGHT - 90))
         text = self.setup.ARCADE_FONT.render(f'Lives: {self.player.lives}', True, (255, 255, 255))
         screen.blit(text, (10, self.setup.SCREEN_HEIGHT - 30))
-        text = self.setup.ARCADE_FONT.render(f'SC?: {self.is_supercharged}', True, (255, 255, 255))
+        text = self.setup.ARCADE_FONT.render(f'SUB: {self.subposition}', True, (255, 255, 255))
         screen.blit(text, (250, self.setup.SCREEN_HEIGHT - 30))
         # text = ARCADE_FONT.render(f'Direction: {self.direction}', True, (255, 255, 255))
         # screen.blit(text, (10, SCREEN_HEIGHT - 30))
@@ -1185,7 +1213,46 @@ class Maze:
                     graph[(x, y)] = neighbors
         return graph
 
+    #helper function to determine if two directions are opposite one another
+    def is_opposite(self, direction1, direction2):
 
+        #for my purposes going in the same direction is considered opposite because it makes junction detection easier
+        if direction1 == direction2:
+            return True
+
+        if direction1 == Direction.UP and direction2 == Direction.DOWN:
+            return True
+        if direction1 == Direction.DOWN and direction2 == Direction.UP:
+            return True
+        if direction1 == Direction.LEFT and direction2 == Direction.RIGHT:
+            return True
+        if direction1 == Direction.RIGHT and direction2 == Direction.LEFT:
+            return True
+        return False
+
+    #helper function to determine what direction a cell is from a starting cell
+    def get_direction(self, start, end):
+        if start[0] == end[0] and start[1] > end[1]:
+            return Direction.UP
+        if start[0] == end[0] and start[1] < end[1]:
+            return Direction.DOWN
+        if start[1] == end[1] and start[0] > end[0]:
+            return Direction.LEFT
+        if start[1] == end[1] and start[0] < end[0]:
+            return Direction.RIGHT
+        return None
+
+    #check if the given position is a junction where the ghost can change direction
+    def is_junction(self, pos):
+        neighbors = self.graph[pos]
+        
+        for neighbor in neighbors:
+            for neighbor2 in neighbors:
+                #if can turn in direction that is not the opposite of the current direction then that means you are at a junction
+                if not self.is_opposite(self.get_direction(pos, neighbor), self.get_direction(pos, neighbor2)):
+                    return True
+        return False
+    
     #display the maze on the screen
     def display(self, screen):
         #reset the screen
@@ -1527,6 +1594,8 @@ class Game:
     def change_mode(self):
         for ghost in self.ghosts.values():
             ghost.mode = self.mode
+            #bandaid fix on certain ghosts not colliding with pacman
+            ghost.is_eaten = False
 
     #update the position of the ghosts and also keep track of releasing them from the cage
     def move_ghosts(self):
@@ -1660,19 +1729,22 @@ class Genetic_Game(Game):
 
     #Execute the gene by reading through the chromome and returning the next move in the sequence
     def choose_gene_move(self):
-
         '''
-        PACMAN ONLY HAS THE ABILITY TO MOVE BETWEEN CELLS, MEANING
+        PACMAN ONLY HAS THE ABILITY TO MOVE AT JUNCTIONS, MEANING
         WHILE HE IS TRAVELLING IN THE "SUB POSITIONS" HE IS LOCKED INTO THE CURRENT DIRECTION HE IS ON
         MEANING A NEW GENETIC MOVE WILL NOT BE EXECUTED UNTIL HE IS FINISHED
         '''
 
-        if self.pacman.can_move(self.maze):
+        if self.pacman.can_move_anywhere(self.maze) and self.maze.is_junction(self.pacman.position):
+            
             next_move = next(self.genetic_moves, 'N')
+            #print(f'turngng {next_move}')
             #if the next move is N then the gene is finished and keep in same direction
             if next_move == 'N':
+                print("out of moves")
                 return self.last_move
             self.last_move = next_move
+
         return self.direction_map[self.last_move]
 
     def start(self):
@@ -1810,7 +1882,9 @@ class Genetic_Game(Game):
             self.game_ticks_paused = True
             self.mode = 'frightened'
             self.change_mode()
+
             #start the timer for frightened mode
+            self.ticks['frightened'] = 0
             self.frightened_ticks_paused = False
 
             self.pacman.is_supercharged = False
@@ -1859,8 +1933,10 @@ class Genetic_Game(Game):
         font = pyg.font.Font(None, 36)
         text = self.setup.ARCADE_FONT.render(f'FPS: {self.clock.get_fps()}', True, (255, 255, 255))
         self.screen.blit(text, (450,10))
-        #text = ARCADE_FONT.render(f'Mode: {self.mode}', True, (255, 255, 255))
-        #self.screen.blit(text, (250, SCREEN_HEIGHT - 30))
+        text = self.setup.ARCADE_FONT.render(f'Mode: {self.mode}', True, (255, 255, 255))
+        self.screen.blit(text, (250, self.setup.SCREEN_HEIGHT-90))
+        text = self.setup.ARCADE_FONT.render(f'JUNCTION {self.maze.is_junction(self.pacman.position) and self.pacman.can_move(self.maze)} DIR: {self.last_move}', True, (255, 0, 0))
+        self.screen.blit(text, (250, self.setup.SCREEN_HEIGHT-120))
 
 
 class Player:

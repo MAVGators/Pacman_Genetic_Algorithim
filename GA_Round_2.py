@@ -16,10 +16,12 @@ class Genetics():
         #basic setup needed to run the visuals for the game
         self.clock = pyg.time.Clock()
         self.SETUP = Game_Setup()
-        self.test_gene = 'LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUULLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD'
-        self.population_size = 300
-        self.gene_length = 3000
-        self.mutation_rate = 0.01
+        self.test_gene = 'LLUULLDD'
+        self.population_size = 400
+        self.gene_length = 400
+        self.starting_mutation_rate = 0.04
+        self.muation_rate_decay = 0
+        self.mutation_rate = self.starting_mutation_rate
         self.generations = 400
 
 
@@ -43,7 +45,9 @@ class Genetics():
     def mutate(self, gene):
         gene_list = list(gene)
         for i in range(len(gene_list)):
-            if random.random() < self.mutation_rate:
+            # Mutation rate increases linearly with the position in the gene
+            position_based_mutation_rate = self.mutation_rate * (i / len(gene_list))
+            if random.random() < position_based_mutation_rate:
                 gene_list[i] = random.choice('UDLR')
         return ''.join(gene_list)
 
@@ -73,6 +77,11 @@ class Genetics():
 
         for generation in range(self.generations):
             start_time = time.time()
+
+            #set the mutation rate to decrease linearly with the generation (almost like simulated annealing)
+            self.mutation_rate = self.starting_mutation_rate - generation * self.muation_rate_decay
+
+
             fitness_scores = []
             for gene in self.population:
 
@@ -108,7 +117,14 @@ class Genetics():
 
             # Elitism: carry over the best genes to the new population
             num_elites = 1
-            elites = [self.population[i] for i in np.argsort(fitness_scores)[-num_elites:]]
+            #don't start making elites until after the later generations
+            if generation < 5:
+                num_elites = 0
+
+            if num_elites == 0:
+                elites = []
+            else:
+                elites = [self.population[i] for i in np.argsort(fitness_scores)[-num_elites:]]
 
             new_population = []
             new_population.extend(elites)
@@ -130,7 +146,7 @@ class Genetics():
     def run_game(self, gene, is_displaying):
         game = Genetic_Game(self.SETUP, self.clock, gene, is_displaying)
         # Main game loop
-        while game.game_over_bool != True and game.ticks['game'] < self.gene_length:
+        while game.game_over_bool != True:
             # Update the game
             game.update()
             #update the display
@@ -144,7 +160,7 @@ class Genetics():
         #constants for tuning weight of parameters
         k_score = 0
         #turning off survival time for now, only care about pellets
-        k_time = 0
+        k_time = 0.04
 
         k_pellets = 1
         #wins are highly desired especially in the beginning where all I really want is a pacman that wins
@@ -216,7 +232,7 @@ def test_2():
 
 def test_3():
     gen_alg = Genetics()
-    print(gen_alg.fitness(gen_alg.run_game(gen_alg.test_gene, is_displaying=False)))
+    print(gen_alg.fitness(gen_alg.run_game(gen_alg.test_gene, is_displaying=True)))
 
 def train():
     gen_alg = Genetics()
@@ -235,7 +251,7 @@ def main():
     #test_2()
     #test_3()
     train()
-    #test_gene(168,'best_gene_20241204-200900.txt')
+    #test_gene(213,'best_gene_20241205-080915.txt')
     end_time = time.time()
 
 
