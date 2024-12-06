@@ -64,7 +64,7 @@ class Genetics():
         gene_list = list(gene)
         for i in range(len(gene_list)):
             # Mutation rate increases linearly with the position in the gene
-            position_based_mutation_rate = self.mutation_rate (i / len(gene_list))
+            position_based_mutation_rate = self.mutation_rate * (i / len(gene_list))
             if random.random() < position_based_mutation_rate:
                 gene_list[i] = random.choice('UDLR')
         return ''.join(gene_list)
@@ -134,7 +134,7 @@ class Genetics():
             print(f'Generation {generation + 1} Best fitness: {best_fitness}, Sim Time: {time.time() - start_time}')
 
             # Elitism: carry over the best genes to the new population
-            num_elites = 3
+            num_elites = 0
             #don't start making elites until after the first few generations
             if generation < 10:
                 num_elites = 0
@@ -238,7 +238,7 @@ class Genetics():
             # Elitism: carry over the best genes to the new population
             num_elites = 2
             #don't start making elites until after the later generations
-            if generation < 10:
+            if generation < 300:
                 num_elites = 0
 
             if num_elites == 0:
