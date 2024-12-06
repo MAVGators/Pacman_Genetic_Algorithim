@@ -30,7 +30,7 @@ This project implements a genetic algorithm to optimize the gameplay of a Pacman
 
 To run the Pacman game with the genetic algorithm, execute the following command:
 ```sh
-python GA_Round_2.py
+python FINAL_GA.py
 ```
 
 ## Classes and Functions
