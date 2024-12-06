@@ -1171,7 +1171,7 @@ class Maze:
                 if self.maze_elems[y][x] == elements.PELLET:
                     remaining += 1
         #starts with 240 pellets 240-remaining is the number of pellets he has eaten
-        return 240 - remaining
+        return 242 - remaining
 
     #place a cherry on the board
     def place_cherry(self):
@@ -1720,6 +1720,8 @@ class Genetic_Game(Game):
         #keep track of wether the game has been won or lost
         self.won = False
 
+        self.move_number = 0
+
     #helper functions to convert between ticks and second, conversion is each tick is 1/60 of a second
     def ticks_to_seconds(self, ticks):
         return ticks/60
@@ -1744,6 +1746,7 @@ class Genetic_Game(Game):
                 print("out of moves")
                 return self.last_move
             self.last_move = next_move
+            self.move_number += 1
 
         return self.direction_map[self.last_move]
 
