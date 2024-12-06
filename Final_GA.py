@@ -18,9 +18,9 @@ class Genetics():
         self.test_gene = 'LLUULLDD'
 
         #genetic algorithm parameters
-        self.population_size = 200
+        self.population_size = 1000
         self.gene_length = 1000
-        self.starting_mutation_rate = 0.08
+        self.starting_mutation_rate = 0.01
         self.muation_rate_decay = 0
         self.mutation_rate = self.starting_mutation_rate
         self.generations = 1000
@@ -70,8 +70,7 @@ class Genetics():
         return ''.join(gene_list)
 
     def run_genetic_algorithm(self):
-        #self.generate_initial_population()
-        self.forced_initial_population(get_gene_by_generation(28,'best_gene_20241205-202703.txt'))
+        self.generate_initial_population()
         best_gene = None
         best_fitness = float('-inf')
         fitness_history = []
@@ -282,8 +281,8 @@ class Genetics():
     def fitness(self, game):
         #constants for tuning weight of parameters
         k_score = 0
-        #turning off survival time for now, only care about pellets
-        k_time = 0.04
+        
+        k_time = 0.01
 
         k_pellets = 1
         #wins are highly desired especially in the beginning where all I really want is a pacman that wins
